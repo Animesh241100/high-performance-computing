@@ -1,0 +1,223 @@
+        -:    0:Source:serial_code.c
+        -:    0:Graph:serial_code.gcno
+        -:    0:Data:serial_code.gcda
+        -:    0:Runs:1
+        -:    1:#include<stdio.h>
+        -:    2:#include<string.h>
+        -:    3:#include<stdlib.h>
+        -:    4:#include<time.h>
+        -:    5:
+        -:    6:#define ERROR -20
+        -:    7:
+        -:    8:struct Stack {
+        -:    9:    int * arr;
+        -:   10:    int max_size;
+        -:   11:    int top;
+        -:   12:};
+        -:   13:
+        -:   14:struct Graph {
+        -:   15:    int E;
+        -:   16:    int V;
+        -:   17:    int ** adj; // adjacency matrix
+        -:   18:};
+        -:   19:
+        -:   20:void init_graph_auto(struct Graph *G, int V, int E);
+        -:   21:void init_graph(struct Graph *G);
+        -:   22:void check_hamiltonian(struct Graph G);
+        -:   23:int is_hamiltonian(int position, int * visit, struct Graph G, struct Stack *Path);
+        -:   24:void push(struct Stack *S, int data);
+        -:   25:int pop(struct Stack *S);
+        -:   26:int show_stack(struct Stack *S);
+        -:   27:
+        1:   28:int main() {
+        -:   29:    struct Graph G;
+        1:   30:    init_graph_auto(&G, 100, 105);
+        1:   31:    check_hamiltonian(G);
+      101:   32:    for (int i = 0; i < G.V; i++) 
+      100:   33:        free(G.adj[i]);
+        1:   34:    free(G.adj);
+        1:   35:    return 0;
+        -:   36:}
+        -:   37:
+        -:   38:
+        -:   39:
+        -:   40:/**************************** stack utils ********************************/
+  1400603:   41:void push(struct Stack *S, int data) {
+  1400603:   42:    if(S->top >= S->max_size - 1)
+    #####:   43:        printf("Stack overflow\n");
+        -:   44:    else {
+  1400603:   45:        S->top++;
+  1400603:   46:        S->arr[S->top] = data;
+        -:   47:    }
+  1400603:   48:}
+        -:   49:
+  1400602:   50:int pop(struct Stack *S) {
+  1400602:   51:    if(S->top > -1) {
+  1400602:   52:        int val = S->arr[S->top];
+  1400602:   53:        S->top--;
+  1400602:   54:        return val;
+        -:   55:    }
+    #####:   56:    printf("Popping out of empty stack\n");
+    #####:   57:    return ERROR;
+        -:   58:}
+        -:   59:
+    #####:   60:int show_stack(struct Stack *S) {
+    #####:   61:    printf("[");
+    #####:   62:    for(int i = 0; i <= S->top; i++) {
+    #####:   63:        printf("%d ", S->arr[i]);
+        -:   64:    }
+    #####:   65:    printf("\b<---top\n");
+    #####:   66:}
+        -:   67:
+        -:   68:/**************************** Graph related ********************************/
+        -:   69:
+        -:   70:
+        1:   71:void init_graph_auto(struct Graph *G, int V, int E) {
+        1:   72:    G->V = V;
+        1:   73:    G->E = E;
+        1:   74:    srand(time(0));
+        1:   75:    G->adj = (int**)malloc(sizeof(int*)*G->V);
+      101:   76:    for(int i = 0; i < G->V; i++) {
+      100:   77:        G->adj[i] = (int *)malloc(sizeof(int)*G->V);
+      100:   78:        memset(G->adj[i], 0, sizeof(int)*G->V);
+        -:   79:    }
+        -:   80:    int u, v;
+      106:   81:    for(int i = 0; i < G->E; i++) {
+      105:   82:        u = rand() % G->V;
+      105:   83:        v = rand() % G->V;
+      105:   84:        G->adj[u][v] = 1;
+      105:   85:        G->adj[v][u] = 1;
+        -:   86:    }
+        1:   87:}
+        -:   88:
+        -:   89:// void init_graph(struct Graph *G) {
+        -:   90://     scanf("%d %d", &G->V, &G->E);
+        -:   91://     G->adj = (int**)malloc(sizeof(int*)*G->V);
+        -:   92://     for(int i = 0; i < G->V; i++) {
+        -:   93://         G->adj[i] = (int *)malloc(sizeof(int)*G->V);
+        -:   94://         memset(G->adj[i], 0, sizeof(int)*G->V);
+        -:   95://     }
+        -:   96://     int u, v;
+        -:   97://     for(int i = 0; i < G->E; i++) {
+        -:   98://         scanf("%d %d", &u, &v);
+        -:   99://         G->adj[v][u] = 1;
+        -:  100://         G->adj[u][v] = 1;
+        -:  101://     }
+        -:  102:// }
+        -:  103:
+        -:  104:/***************************** Hamiltonian **********************************/
+        -:  105:
+        1:  106:void check_hamiltonian(struct Graph G) {
+        1:  107:    int visit[G.V];
+      101:  108:    for(int i = 0; i < G.V; i++)
+      100:  109:        visit[i] = 0;
+        -:  110:    struct Stack Path;
+        1:  111:    Path.max_size = G.V + 1;
+        1:  112:    Path.top = -1;
+        1:  113:    Path.arr = (int*)malloc(sizeof(int)*(G.V + 1));
+        1:  114:    push(&Path, 0);
+        1:  115:    visit[0] = 1;
+        1:  116:    if(is_hamiltonian(1, visit, G, &Path)) {
+    #####:  117:        printf("Hamiltonian Cycle is present\n"); 
+    #####:  118:        show_stack(&Path);
+        -:  119:    }
+        -:  120:    else
+        1:  121:        printf("No hamiltonian cycle is present.\n");
+        1:  122:}
+        -:  123:
+  1400603:  124:int is_hamiltonian(int position, int * visit, struct Graph G, struct Stack *Path) {
+  1400603:  125:    if(position == G.V) {
+    #####:  126:        if(G.adj[Path->arr[position-1]][0]) {
+    #####:  127:            push(Path, 0);
+    #####:  128:            return 1;
+        -:  129:        }
+    #####:  130:        return 0;
+        -:  131:    }
+141460903:  132:    for(int i = 0; i < G.V; i++) {
+140060300:  133:        if(G.adj[Path->arr[position - 1]][i] && !visit[i]) {
+  1400602:  134:            push(Path, i);
+  1400602:  135:            visit[i] = 1;
+  1400602:  136:            if(is_hamiltonian(position + 1, visit, G, Path))
+    #####:  137:                return 1;
+  1400602:  138:            visit[i] = 0;
+  1400602:  139:            pop(Path);
+        -:  140:        }
+        -:  141:    }
+  1400603:  142:    return 0;
+        -:  143:}
+        -:  144:
+        -:  145:/* Input types
+        -:  146:8 9
+        -:  147:0 1
+        -:  148:1 2
+        -:  149:2 3
+        -:  150:3 4
+        -:  151:4 1
+        -:  152:4 6
+        -:  153:3 5
+        -:  154:5 6
+        -:  155:6 7
+        -:  156:
+        -:  157:ham
+        -:  158:
+        -:  159:8 9
+        -:  160:0 1
+        -:  161:1 2
+        -:  162:2 3
+        -:  163:3 4
+        -:  164:0 4
+        -:  165:4 7
+        -:  166:3 5
+        -:  167:5 6
+        -:  168:6 7
+        -:  169:
+        -:  170:
+        -:  171:
+        -:  172:print the graph
+        -:  173:for(int i = 0; i < G->V; i++) {
+        -:  174:    printf("%d: ", i);
+        -:  175:    for(int j = 0; j < G->V; j++) {
+        -:  176:        printf("%d ", G->adj[i][j]);
+        -:  177:    }
+        -:  178:    printf("\n");
+        -:  179:}   
+        -:  180:
+        -:  181:
+        -:  182:17 30
+        -:  183:0 1
+        -:  184:1 2
+        -:  185:2 8
+        -:  186:0 8
+        -:  187:2 4
+        -:  188:2 3
+        -:  189:3 4
+        -:  190:8 3
+        -:  191:3 12
+        -:  192:4 12
+        -:  193:4 15
+        -:  194:14 15
+        -:  195:1 9
+        -:  196:0 10
+        -:  197:9 10
+        -:  198:9 14
+        -:  199:13 14
+        -:  200:13 10
+        -:  201:13 16
+        -:  202:11 16
+        -:  203:10 11
+        -:  204:6 11
+        -:  205:0 6
+        -:  206:5 12
+        -:  207:5 6
+        -:  208:6 11
+        -:  209:7 6
+        -:  210:7 5
+        -:  211:5 8
+        -:  212:3 5
+        -:  213:
+        -:  214:
+        -:  215:
+        -:  216:
+        -:  217:
+        -:  218:
+        -:  219:*/

@@ -1,0 +1,58 @@
+        -:    0:Source:dot_product_serial.c
+        -:    0:Graph:dot_product_serial.gcno
+        -:    0:Data:dot_product_serial.gcda
+        -:    0:Runs:1
+        -:    1:#include <omp.h>
+        -:    2:#include <stdio.h>
+        -:    3:#include <stdlib.h>
+        -:    4:#include<time.h>
+        -:    5:
+        -:    6:#define N 10
+        -:    7:
+        -:    8:void init_arr(double * arr);
+        -:    9:double dot_product(double * arr1, double * arr2);
+        -:   10:void print_arr(double * arr);
+        -:   11:
+        1:   12:int main() {
+        1:   13:    srand(time(0));
+        -:   14:    double arr1[N];
+        -:   15:    double arr2[N];
+        1:   16:    init_arr(arr1);
+        1:   17:    init_arr(arr2);
+        1:   18:    int x = 2;
+        1:   19:    if(x == 3) {
+    #####:   20:        printf("hloladf");
+    #####:   21:        int a = 3 + 4;
+    #####:   22:        return 0;
+        -:   23:        a = a*4;
+        -:   24:    }
+        1:   25:    double dot_product_val = dot_product(arr1, arr2);
+        -:   26:    
+        1:   27:    print_arr(arr2);
+        1:   28:    print_arr(arr1);
+        1:   29:    printf("Dot Product value: %lf\n", dot_product_val);
+        1:   30:    return 0;
+        -:   31:}
+        -:   32:
+        2:   33:void init_arr(double * arr) {
+       22:   34:    for(int i = 0; i < N; i++)
+       20:   35:        arr[i] = rand() % 100;
+        -:   36:        // scanf("%lf", &arr[i]);
+        2:   37:}
+        -:   38:
+        -:   39:
+        1:   40:double dot_product(double * arr1, double * arr2) {
+        1:   41:    double sum = 0;
+       11:   42:    for(int i = 0; i < N; i++) {
+       10:   43:        sum += arr1[i] * arr2[i];
+        -:   44:    }
+        1:   45:    return sum;
+        -:   46:}
+        -:   47:
+        2:   48:void print_arr(double * arr) {
+       22:   49:    for(int i = 0; i < N; i++) {
+       20:   50:        printf("%lf, ", arr[i]);
+        -:   51:    }
+        2:   52:    printf("\n");
+        2:   53:}
+        -:   54:
