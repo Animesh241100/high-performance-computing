@@ -3,11 +3,13 @@ Flat profile:
 Each sample counts as 0.01 seconds.
   %   cumulative   self              self     total           
  time   seconds   seconds    calls   s/call   s/call  name    
- 98.30      1.76     1.76        1     1.76     1.80  is_hamiltonian
-  1.12      1.78     0.02  3344455     0.00     0.00  push
-  1.12      1.80     0.02  3344454     0.00     0.00  pop
-  0.00      1.80     0.00        1     0.00     1.80  check_hamiltonian
-  0.00      1.80     0.00        1     0.00     0.00  init_graph_auto
+ 49.79      5.94     5.94        1     5.94    11.96  num_hamiltonian_cycles
+ 48.28     11.69     5.75 1811832600     0.00     0.00  top
+  1.43     11.86     0.17 18118326     0.00     0.00  push
+  0.84     11.96     0.10 18118325     0.00     0.00  pop
+  0.08     11.97     0.01                             main
+  0.00     11.97     0.00        1     0.00    11.96  check_hamiltonian
+  0.00     11.97     0.00        1     0.00     0.00  init_graph_auto
 
  %         the percentage of the total running time of the
 time       program used by this function.
@@ -45,35 +47,39 @@ notice and this notice are preserved.
 		     Call graph (explanation follows)
 
 
-granularity: each sample hit covers 2 byte(s) for 0.56% of 1.80 seconds
+granularity: each sample hit covers 2 byte(s) for 0.08% of 11.97 seconds
 
 index % time    self  children    called     name
-                0.00    1.80       1/1           main [2]
-[1]    100.0    0.00    1.80       1         check_hamiltonian [1]
-                1.76    0.04       1/1           is_hamiltonian [3]
-                0.00    0.00       1/3344455     push [4]
------------------------------------------------
                                                  <spontaneous>
-[2]    100.0    0.00    1.80                 main [2]
-                0.00    1.80       1/1           check_hamiltonian [1]
-                0.00    0.00       1/1           init_graph_auto [6]
+[1]    100.0    0.01   11.96                 main [1]
+                0.00   11.96       1/1           check_hamiltonian [2]
+                0.00    0.00       1/1           init_graph_auto [7]
 -----------------------------------------------
-                             3344454             is_hamiltonian [3]
-                1.76    0.04       1/1           check_hamiltonian [1]
-[3]    100.0    1.76    0.04       1+3344454 is_hamiltonian [3]
-                0.02    0.00 3344454/3344454     pop [5]
-                0.02    0.00 3344454/3344455     push [4]
-                             3344454             is_hamiltonian [3]
+                0.00   11.96       1/1           main [1]
+[2]     99.9    0.00   11.96       1         check_hamiltonian [2]
+                5.94    6.03       1/1           num_hamiltonian_cycles [3]
+                0.00    0.00       1/18118326     push [5]
 -----------------------------------------------
-                0.00    0.00       1/3344455     check_hamiltonian [1]
-                0.02    0.00 3344454/3344455     is_hamiltonian [3]
-[4]      1.1    0.02    0.00 3344455         push [4]
+                             18118325             num_hamiltonian_cycles [3]
+                5.94    6.03       1/1           check_hamiltonian [2]
+[3]     99.9    5.94    6.03       1+18118325 num_hamiltonian_cycles [3]
+                5.75    0.00 1811832600/1811832600     top [4]
+                0.17    0.00 18118325/18118326     push [5]
+                0.10    0.00 18118325/18118325     pop [6]
+                             18118325             num_hamiltonian_cycles [3]
 -----------------------------------------------
-                0.02    0.00 3344454/3344454     is_hamiltonian [3]
-[5]      1.1    0.02    0.00 3344454         pop [5]
+                5.75    0.00 1811832600/1811832600     num_hamiltonian_cycles [3]
+[4]     48.1    5.75    0.00 1811832600         top [4]
 -----------------------------------------------
-                0.00    0.00       1/1           main [2]
-[6]      0.0    0.00    0.00       1         init_graph_auto [6]
+                0.00    0.00       1/18118326     check_hamiltonian [2]
+                0.17    0.00 18118325/18118326     num_hamiltonian_cycles [3]
+[5]      1.4    0.17    0.00 18118326         push [5]
+-----------------------------------------------
+                0.10    0.00 18118325/18118325     num_hamiltonian_cycles [3]
+[6]      0.8    0.10    0.00 18118325         pop [6]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[7]      0.0    0.00    0.00       1         init_graph_auto [7]
 -----------------------------------------------
 
  This table describes the call tree of the program, and was sorted by
@@ -166,5 +172,6 @@ notice and this notice are preserved.
 
 Index by function name
 
-   [1] check_hamiltonian       [3] is_hamiltonian          [4] push
-   [6] init_graph_auto         [5] pop
+   [2] check_hamiltonian       [3] num_hamiltonian_cycles  [4] top
+   [7] init_graph_auto         [6] pop
+   [1] main                    [5] push

@@ -1,0 +1,227 @@
+        -:    0:Source:serial_code_code_balance.c
+        -:    0:Graph:serial_code_code_balance.gcno
+        -:    0:Data:serial_code_code_balance.gcda
+        -:    0:Runs:1
+        -:    1:#include<stdio.h>
+        -:    2:#include<string.h>
+        -:    3:#include<stdlib.h>
+        -:    4:#include<time.h>
+        -:    5:
+        -:    6:#define ERROR -20
+        -:    7:
+        -:    8:// Represents a Stack
+        -:    9:struct Stack {
+        -:   10:    int * arr;
+        -:   11:    int max_size;
+        -:   12:    int top;
+        -:   13:};
+        -:   14:
+        -:   15:// Represents an Undirected Graph
+        -:   16:struct Graph {
+        -:   17:    int E;
+        -:   18:    int V;
+        -:   19:    int ** adj; // adjacency matrix
+        -:   20:};
+        -:   21:
+        -:   22:/***************************************************************************/
+        -:   23:
+        -:   24:void init_graph_auto(struct Graph *G, int V, int E);
+        -:   25:void init_graph(struct Graph *G);
+        -:   26:void check_hamiltonian(struct Graph G);
+        -:   27:int num_hamiltonian_cycles(int position, int * visit, struct Graph G, struct Stack *Path);
+        -:   28:void push(struct Stack *S, int data);
+        -:   29:int pop(struct Stack *S);
+        -:   30:void show_stack(struct Stack *S);
+        -:   31:void print_graph(struct Graph *G);
+        -:   32:
+        -:   33:/***************************************************************************/
+        -:   34:
+        -:   35:
+        1:   36:int main() {
+        -:   37:    struct Graph G;     // #flops = 0 ==> BC = NA
+        1:   38:    init_graph_auto(&G, 100, 105);      // uncomment to initialize the graph randomly
+        -:   39:    // init_graph(&G);                  // uncomment to initialize the graph with user input
+        1:   40:    check_hamiltonian(G);
+        -:   41:
+      101:   42:    for (int i = 0; i < G.V; i++) 
+      100:   43:        free(G.adj[i]);
+        1:   44:    free(G.adj);
+        1:   45:    return 0;   // #flops = 0 ==> BC = NA
+        -:   46:}
+        -:   47:
+        -:   48:
+        -:   49:
+        -:   50:/********************** stack operations implementation *******************/
+   131708:   51:void push(struct Stack *S, int data) {
+   131708:   52:    if(S->top > S->max_size - 1) // #words = 2; #flops = 2 ==> BC = 2/2 = 1
+    #####:   53:        printf("Stack overflow\n"); 
+        -:   54:    else {
+   131708:   55:        S->top++; // #words = 1; #flops = 1 ==> BC = 1/1 = 1
+   131708:   56:        S->arr[S->top] = data; // #words = 3; #flops = 0 ==> BC = 3/0 = NA
+        -:   57:    }
+   131708:   58:}
+        -:   59:
+ 13170800:   60:int top(struct Stack *S) {
+ 13170800:   61:    if(S->top > -1)  // #words = 1; #flops = 1 ==> BC = 1/1 = 1
+ 13170800:   62:        return S->arr[S->top]; // #words = 2; #flops = 0 ==> BC = 2/0 = NA
+    #####:   63:    printf("Stack is empty!\n");
+    #####:   64:    return ERROR;  // #flops = 0 ==> BC = NA
+        -:   65:
+        -:   66:}
+        -:   67:
+   131707:   68:int pop(struct Stack *S) {
+   131707:   69:    if(S->top > -1) {  // #words = 1; #flops = 1 ==> BC = 1/1 = 1
+   131707:   70:        int val = S->arr[S->top];  // #words = 3; #flops = 0 ==> BC = 3/0 = NA
+   131707:   71:        S->top--; // #words = 1; #flops = 1 ==> BC = 1/1 = 1
+   131707:   72:        return val;  // #flops = 0 ==> BC = NA
+        -:   73:    }
+    #####:   74:    printf("Popping out of empty stack\n");
+    #####:   75:    return ERROR;  // #flops = 0 ==> BC = NA
+        -:   76:}
+        -:   77:
+    #####:   78:void show_stack(struct Stack *S) {
+    #####:   79:    printf("[");
+    #####:   80:    for(int i = 0; i <= S->top; i++) {
+    #####:   81:        printf("%d ", S->arr[i]);
+        -:   82:    }
+    #####:   83:    printf("\b<---top\n");
+    #####:   84:}
+        -:   85:
+        -:   86:/******************** Graph Initialization related ************************/
+        -:   87:
+        -:   88:// initializes an undirected graph with V nodes and E edges
+        1:   89:void init_graph_auto(struct Graph *G, int V, int E) {
+        1:   90:    G->V = V;   // #words = 2; #flops = 0 ==> BC = 2/0 = NA
+        1:   91:    G->E = E;    // #words = 2; #flops = 0 ==> BC = 2/0 = NA
+        1:   92:    srand(time(0));
+        1:   93:    G->adj = (int**)malloc(sizeof(int*)*G->V);  // #words = 2; #flops = 1 ==> BC = 2/1 = 2
+      101:   94:    for(int i = 0; i < G->V; i++) {
+      100:   95:        G->adj[i] = (int *)malloc(sizeof(int)*G->V);  // #words = 2; #flops = 1 ==> BC = 2/1 = 2
+      100:   96:        memset(G->adj[i], 0, sizeof(int)*G->V);
+        -:   97:    }
+        -:   98:    int u, v;
+      106:   99:    for(int i = 0; i < G->E; i++) {
+      105:  100:        u = rand() % G->V;  // #words = 2; #flops = 1 ==> BC = 2/1 = 2
+      105:  101:        v = rand() % G->V;  // #words = 2; #flops = 1 ==> BC = 2/1 = 2
+      105:  102:        G->adj[u][v] = 1;   // #words = 3; #flops = 0 ==> BC = 3/0 = NA
+      105:  103:        G->adj[v][u] = 1;   // #words = 3; #flops = 0 ==> BC = 3/0 = NA
+        -:  104:    }
+        1:  105:}
+        -:  106:
+        -:  107:// initializes an undirected graph based on the user input
+    #####:  108:void init_graph(struct Graph *G) {
+    #####:  109:    scanf("%d %d", &G->V, &G->E);
+    #####:  110:    G->adj = (int**)malloc(sizeof(int*)*G->V); // #words = 2; #flops = 1 ==> BC = 2/1 = 2
+    #####:  111:    for(int i = 0; i < G->V; i++) {
+    #####:  112:        G->adj[i] = (int *)malloc(sizeof(int)*G->V); // #words = 2; #flops = 1 ==> BC = 2/1 = 2
+    #####:  113:        memset(G->adj[i], 0, sizeof(int)*G->V);
+        -:  114:    }
+        -:  115:    int u, v;
+    #####:  116:    for(int i = 0; i < G->E; i++) {
+    #####:  117:        scanf("%d %d", &u, &v);
+    #####:  118:        G->adj[v][u] = 1;  // #words = 3; #flops = 0 ==> BC = 3/0 = NA
+    #####:  119:        G->adj[u][v] = 1;  // #words = 3; #flops = 0 ==> BC = 3/0 = NA
+        -:  120:    }
+    #####:  121:}
+        -:  122:
+        -:  123:// prints the graph
+    #####:  124:void print_graph(struct Graph *G) {
+    #####:  125:    for(int i = 0; i < G->V; i++) {
+    #####:  126:        printf("%d: ", i);
+    #####:  127:        for(int j = 0; j < G->V; j++) {
+    #####:  128:            printf("%d ", G->adj[i][j]);
+        -:  129:        }
+    #####:  130:        printf("\n");
+        -:  131:    }   
+    #####:  132:}
+        -:  133:
+        -:  134:/************************ Couting Hamiltonian cycles *********************/
+        -:  135:
+        1:  136:void check_hamiltonian(struct Graph G) {
+        1:  137:    int visit[G.V];  // #flops = 0 ==> BC = NA
+      101:  138:    for(int i = 0; i < G.V; i++)
+      100:  139:        visit[i] = 0;  // #words = 1; #flops = 0 ==> BC = 1/0 = NA
+        -:  140:    struct Stack Path;  // #flops = 0 ==> BC = NA
+        1:  141:    Path.max_size = G.V + 1;  // #words = 2; #flops = 1 ==> BC = 2/1 = 2
+        1:  142:    Path.top = -1;   // #words = 1; #flops = 0 ==> BC = 1/0 = NA
+        1:  143:    Path.arr = (int*)malloc(sizeof(int)*(G.V + 1));  // #words = 2; #flops = 1 ==> BC = 2/1 = 2
+        1:  144:    push(&Path, 0);
+        1:  145:    visit[0] = 1; // #words = 1; #flops = 0 ==> BC = 1/0 = NA
+        1:  146:    int num_cycles = num_hamiltonian_cycles(1, visit, G, &Path);
+        1:  147:    printf("#Hamiltonian Cycles = %d\n", num_cycles); 
+        1:  148:}
+        -:  149:
+        -:  150:// returns the number of hamiltonian cycles present in the undirected graph `G`
+   131708:  151:int num_hamiltonian_cycles(int position, int * visit, struct Graph G, struct Stack *Path) {
+   131708:  152:    if(position == G.V) {    // #words = 2; #flops = 1 ==> BC = 2/1 = 2
+    #####:  153:        if(G.adj[top(Path)][0]) { // #words = 2; #flops = 1 ==> BC = 2/1 = 2
+    #####:  154:            push(Path, 0);
+    #####:  155:            show_stack(Path);
+    #####:  156:            pop(Path);
+    #####:  157:            return 1;  // #flops = 0 ==> BC = NA
+        -:  158:        }
+    #####:  159:        return 0;  // #flops = 0 ==> BC = NA
+        -:  160:    }
+   131708:  161:    int num_cycles = 0;  // #flops = 0 ==> BC = NA
+ 13302508:  162:    for(int i = 0; i < G.V; i++) {
+ 13170800:  163:        if((G.adj[top(Path)][i] && !visit[i])) {  // #words = 4; #flops = 2 ==> BC = 4/2 = 2
+   131707:  164:            push(Path, i);
+   131707:  165:            visit[i] = 1;   // #flops = 0 ==> BC = NA
+   131707:  166:            num_cycles += num_hamiltonian_cycles(position + 1, visit, G, Path);
+   131707:  167:            visit[i] = 0;   // #flops = 0 ==> BC = NA
+   131707:  168:            pop(Path);
+        -:  169:        }
+        -:  170:    }
+   131708:  171:    return num_cycles;  // #flops = 0 ==> BC = NA
+        -:  172:}
+        -:  173:
+        -:  174:/***************************************************************************/
+        -:  175:
+        -:  176:/* Input types
+        -:  177:
+        -:  178:17 30
+        -:  179:0 1
+        -:  180:1 2
+        -:  181:2 8
+        -:  182:0 8
+        -:  183:2 4
+        -:  184:2 3
+        -:  185:3 4
+        -:  186:8 3
+        -:  187:3 12
+        -:  188:4 12
+        -:  189:4 15
+        -:  190:14 15
+        -:  191:1 9
+        -:  192:0 10
+        -:  193:9 10
+        -:  194:9 14
+        -:  195:13 14
+        -:  196:13 10
+        -:  197:13 16
+        -:  198:11 16
+        -:  199:10 11
+        -:  200:6 11
+        -:  201:0 6
+        -:  202:5 12
+        -:  203:5 6
+        -:  204:6 11
+        -:  205:7 6
+        -:  206:7 5
+        -:  207:5 8
+        -:  208:3 5
+        -:  209:==> 28 cycles
+        -:  210:
+        -:  211:6 8
+        -:  212:0 1
+        -:  213:1 2
+        -:  214:2 5
+        -:  215:4 5
+        -:  216:3 4
+        -:  217:0 3
+        -:  218:1 4
+        -:  219:2 3
+        -:  220:==> 4 cycles
+        -:  221:
+        -:  222:
+        -:  223:*/
