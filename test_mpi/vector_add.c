@@ -1,4 +1,4 @@
-// using bcast
+// Program to Add two vectors
 
 #include<mpi.h>
 #include<stdio.h>
@@ -18,9 +18,7 @@ int main(int argc, char** argv) {
     int name_len;
     MPI_Get_processor_name(processor_name, &name_len);
     
-    int vec_size = 15;
-    // scanf("%d", &vec_size);
-    printf("loda mera\n");
+    int vec_size = 19;
     int vector1[vec_size];
     int vector2[vec_size];
     int final_sum_vector[vec_size];
@@ -29,6 +27,12 @@ int main(int argc, char** argv) {
             vector1[i] = 2*i;
             vector2[i] = 3*i;
         }
+        printf("First vector: ");
+        print_vec(vector1, vec_size);
+        printf("Second vector: ");
+        print_vec(vector2, vec_size);
+        for(int i = 0; i < vec_size%world_size; i++)
+            final_sum_vector[vec_size - 1 - i] = vector1[vec_size - 1 - i] + vector2[vec_size - 1 - i];
     }
     int len = vec_size / world_size;
     int scat_vec1[len];
@@ -37,9 +41,6 @@ int main(int argc, char** argv) {
 
     MPI_Scatter(vector1, len, MPI_INT, scat_vec1, len, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatter(vector2, len, MPI_INT, scat_vec2, len, MPI_INT, 0, MPI_COMM_WORLD);
-    printf("BEFORE: rank: %d : ", my_rank);
-    print_vec(scat_vec1, len);
-    print_vec(scat_vec2, len);
     for(int i = 0; i < len; i++) {
         sum_vec[i] = scat_vec1[i] + scat_vec2[i];
     }
@@ -49,10 +50,6 @@ int main(int argc, char** argv) {
         printf("Final vector: ");
         print_vec(final_sum_vector, vec_size);
     }
-    // int final_sum = 0;
-    // int local_sum = data_el[0] + data_el[1];
-    // MPI_Reduce(&local_sum, &final_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    // printf("AFTER: rank: %d, local_sum: %d, sum: %d\n", my_rank, local_sum, final_sum);
     MPI_Finalize();
     return 0;
 }
@@ -62,12 +59,3 @@ void print_vec(int * vec, int len) {
         printf("%d ", vec[i]);
     printf("\n");
 }
-
-
-/*
-
-int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
-int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
-
-
-*/
