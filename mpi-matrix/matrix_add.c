@@ -43,8 +43,10 @@ int main(int argc, char** argv) {
         InitMatrix(matrix2, FALSE);
         PrintMatrix(matrix1, "A");
         PrintMatrix(matrix2, "B");
-        // for(int i = 0; i < vec_size%world_size; i++)
-            // final_mult_vector[vec_size - 1 - i] = vector1[vec_size - 1 - i] * vector2[vec_size - 1 - i];
+        for(int i = 0; i < MAX_SIZE%world_size; i++) {
+            for(int j = 0; j < MAX_SIZE; j++)
+                product_matrix[MAX_SIZE - 1 - i][j] = matrix1[MAX_SIZE - 1 - i][j] + matrix2[MAX_SIZE - 1 - i][j];
+        }
     }
 
     int len = MAX_SIZE / world_size;
