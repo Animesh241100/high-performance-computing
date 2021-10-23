@@ -1,11 +1,11 @@
-// Program to Add two vectors
+// Program to Add two matrices
 
 #include<mpi.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
 
-#define MAX_SIZE 10
+#define MAX_SIZE 100
 #define TRUE 1
 #define FALSE 0
 
@@ -13,7 +13,7 @@ void PrintMatrix(double ** array, char * array_name);
 int Allocate2DMemory(double ***array, int n, int m);
 int Free2DMemory(double ***array);
 void InitMatrix(double **array, _Bool is_empty);
-
+void TestSum(double **A, double **B, int len);
 
 
 int main(int argc, char** argv) {
@@ -29,11 +29,11 @@ int main(int argc, char** argv) {
     
     double **matrix1;
     double **matrix2; 
-    double **product_matrix;
+    double **final_sum_matrix;
     Allocate2DMemory(&matrix1, MAX_SIZE, MAX_SIZE);
     Allocate2DMemory(&matrix2, MAX_SIZE, MAX_SIZE);
-    Allocate2DMemory(&product_matrix, MAX_SIZE, MAX_SIZE);
-    InitMatrix(product_matrix, TRUE);
+    Allocate2DMemory(&final_sum_matrix, MAX_SIZE, MAX_SIZE);
+    InitMatrix(final_sum_matrix, TRUE);
 
     MPI_Barrier(MPI_COMM_WORLD); /* IMPORTANT */
     start = MPI_Wtime();
@@ -41,42 +41,43 @@ int main(int argc, char** argv) {
         srand(time(0));
         InitMatrix(matrix1, FALSE);
         InitMatrix(matrix2, FALSE);
-        PrintMatrix(matrix1, "A");
-        PrintMatrix(matrix2, "B");
+        // PrintMatrix(matrix1, "A");  // uncomment to check the first randomly generated matrix
+        // PrintMatrix(matrix2, "B");  // uncomment to check the second randomly generated matrix
         for(int i = 0; i < MAX_SIZE%world_size; i++) {
             for(int j = 0; j < MAX_SIZE; j++)
-                product_matrix[MAX_SIZE - 1 - i][j] = matrix1[MAX_SIZE - 1 - i][j] + matrix2[MAX_SIZE - 1 - i][j];
+                final_sum_matrix[MAX_SIZE - 1 - i][j] = matrix1[MAX_SIZE - 1 - i][j] + matrix2[MAX_SIZE - 1 - i][j];
         }
     }
 
     int len = MAX_SIZE / world_size;
     double **scat_mat1;
     double **scat_mat2; 
-    double **mult_mat;
+    double **sum_mat;
     Allocate2DMemory(&scat_mat1, len, MAX_SIZE);
     Allocate2DMemory(&scat_mat2, len, MAX_SIZE);
-    Allocate2DMemory(&mult_mat, len, MAX_SIZE);
+    Allocate2DMemory(&sum_mat, len, MAX_SIZE);
 
     MPI_Scatter(&(matrix1[0][0]), len*MAX_SIZE, MPI_DOUBLE, &(scat_mat1[0][0]), len*MAX_SIZE, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Scatter(&(matrix2[0][0]), len*MAX_SIZE, MPI_DOUBLE, &(scat_mat2[0][0]), len*MAX_SIZE, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     for(int i = 0; i < len; i++) {
         for(int j = 0; j < MAX_SIZE; j++)
-            mult_mat[i][j] = scat_mat1[i][j] + scat_mat2[i][j];
+            sum_mat[i][j] = scat_mat1[i][j] + scat_mat2[i][j];
     }
 
-    MPI_Gather(&(mult_mat[0][0]), len*MAX_SIZE, MPI_DOUBLE, &(product_matrix[0][0]), len*MAX_SIZE, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Gather(&(sum_mat[0][0]), len*MAX_SIZE, MPI_DOUBLE, &(final_sum_matrix[0][0]), len*MAX_SIZE, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     Free2DMemory(&scat_mat1);
     Free2DMemory(&scat_mat2);
-    Free2DMemory(&mult_mat);
+    Free2DMemory(&sum_mat);
     MPI_Barrier(MPI_COMM_WORLD); 
     end = MPI_Wtime();
     if(my_rank == 0) {
-        PrintMatrix(product_matrix, "A + B");
+        // PrintMatrix(final_sum_matrix, "A + B"); // uncomment to check the sum using MPI
         printf("Time taken: %f\n", end-start);
+        // TestSum(matrix1, matrix2, MAX_SIZE); // uncomment to check the actual sum calculated 
     }
     Free2DMemory(&matrix1);
     Free2DMemory(&matrix2);
-    Free2DMemory(&product_matrix);
+    Free2DMemory(&final_sum_matrix);
     MPI_Finalize();
     return 0;
 }
@@ -127,4 +128,15 @@ void PrintMatrix(double ** array, char * array_name) {
         printf("\n");
     }
     printf("\n");
+}
+
+// Calculates sum without using MPI for testing purpose
+void TestSum(double **A, double **B, int len) {
+    printf("This output is for test purposes only: \n");
+    for(int i = 0; i < len; i++) {
+        for(int j = 0; j < len; j++)
+            printf("%f ", A[i][j] + B[i][j]);
+        printf("\n");
+    }
+    printf("\n\n");
 }

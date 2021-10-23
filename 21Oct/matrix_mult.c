@@ -1,11 +1,11 @@
-// Program to Add two vectors
+// Program to Add multiply two Matrices
 
 #include<mpi.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
 
-#define MAX_SIZE 10
+#define MAX_SIZE 100
 #define TRUE 1
 #define FALSE 0
 
@@ -14,7 +14,7 @@ void PrintMatrix(double ** array, char * array_name);
 int Allocate2DMemory(double ***array, int n, int m);
 int Free2DMemory(double ***array);
 void InitMatrix(double **array, _Bool is_empty);
-
+void TestProduct(double **A, double **B, int len);
 
 
 int main(int argc, char** argv) {
@@ -42,8 +42,8 @@ int main(int argc, char** argv) {
         srand(time(0));
         InitMatrix(matrix1, FALSE);
         InitMatrix(matrix2, FALSE);
-        PrintMatrix(matrix1, "A");
-        PrintMatrix(matrix2, "B");
+        // PrintMatrix(matrix1, "A"); // uncomment to check the first randomly generated matrix
+        // PrintMatrix(matrix2, "B"); // uncomment to check the second randomly generated matrix
         for(int i = 0; i < MAX_SIZE%world_size; i++) {
             for(int j = 0; j < MAX_SIZE; j++)
                 product_matrix[MAX_SIZE - 1 - i][j] = get_value(matrix1, MAX_SIZE - 1 - i, matrix2, j);
@@ -73,15 +73,9 @@ int main(int argc, char** argv) {
     MPI_Barrier(MPI_COMM_WORLD); 
     end = MPI_Wtime();
     if(my_rank == 0) {
-        PrintMatrix(product_matrix, "A * B");
+        // PrintMatrix(product_matrix, "A * B"); // uncomment to check the product using MPI
         printf("Time taken: %f\n", end-start);
-        double **test;
-        Allocate2DMemory(&test, MAX_SIZE, MAX_SIZE);
-        for(int i = 0; i < MAX_SIZE; i++) {
-            for(int j = 0; j < MAX_SIZE; j++)
-                test[i][j] = get_value(matrix1, i, matrix2, j);
-        }
-        PrintMatrix(test, "test");
+        // TestProduct(matrix1, matrix2, MAX_SIZE); // uncomment to check the actual product calculated       
     }
     Free2DMemory(&matrix1);
     Free2DMemory(&matrix2);
@@ -97,7 +91,7 @@ void InitMatrix(double **array, _Bool is_empty) {
             if(is_empty)
                 array[i][j] = -1;
             else    
-                array[i][j] = (double)(rand() % 100) / (double)10;
+                array[i][j] = (double)(rand() % 100000) / (double)100;
         }
    } 
 }
@@ -145,4 +139,15 @@ double get_value(double **A, int ptr_A, double **B, int ptr_B) {
         sum = sum + A[ptr_A][i] * B[i][ptr_B];
     }
     return sum;
+}
+
+// Calculates product without using MPI for testing purpose
+void TestProduct(double **A, double **B, int len) {
+    printf("This output is for test purposes only: \n");
+    for(int i = 0; i < len; i++) {
+        for(int j = 0; j < len; j++)
+            printf("%f ", get_value(A, i, B, j));
+        printf("\n");
+    }
+    printf("\n\n");
 }
