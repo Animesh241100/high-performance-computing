@@ -16,14 +16,8 @@ void check_hamiltonian(struct Graph G) {
 
 int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P) {
     int num_cycles = 0;
-    struct Stack_Args args_stack;
-    args_stack.max_size = 100;
-    args_stack.top = -1;
-    args_stack.arr = (struct Args*)malloc(sizeof(struct Args)*(100));
-    struct Args args;
-    args.path = P;
-    args.visit = vis;
-    args.position = pos;
+    struct Stack_Args args_stack = init_args_stack();
+    struct Args args = init_args(pos, vis, P);
     push_args(&args_stack, args);
     while(top_args(&args_stack).position != EMPTY) {
         args = top_args(&args_stack);
@@ -47,12 +41,9 @@ int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P) 
                     struct Stack* Path_copy = (struct Stack*)malloc(sizeof(struct Stack));
                     copy_visit(visit, visit_copy, G.V);
                     copy_path(Path, Path_copy);
-                    args.position = position + 1 ;
-                    args.visit = visit_copy;
-                    args.path = Path_copy;
+                    args = init_args(position+1, visit_copy, Path_copy);
                     push_args(&args_stack, args);
-                    // backtracking step
-                    visit[i] = 0;
+                    visit[i] = 0; // backtracking step
                     pop(Path);
                 }
             }

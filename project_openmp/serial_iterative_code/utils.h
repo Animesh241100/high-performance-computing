@@ -8,6 +8,8 @@ void push_args(struct Stack_Args *S, struct Args data);
 struct Args top_args(struct Stack_Args *S);
 int pop_args(struct Stack_Args *S);
 void show_stack_args(struct Stack_Args *S, int V);
+struct Stack_Args init_args_stack();
+struct Args init_args(int pos, int * visit, struct Stack* p);
 
 
 void check_hamiltonian(struct Graph G);

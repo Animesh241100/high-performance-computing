@@ -75,3 +75,18 @@ void show_stack_args(struct Stack_Args *S, int V) {
     printf("\b<-----------------top args\n");
 }
 
+struct Stack_Args init_args_stack() {
+    struct Stack_Args args_stack;
+    args_stack.max_size = 100;
+    args_stack.top = -1;
+    args_stack.arr = (struct Args*)malloc(sizeof(struct Args)*(100));
+    return args_stack;
+}
+
+struct Args init_args(int pos, int * visit, struct Stack* p) {
+    struct Args args;
+    args.path = p;
+    args.visit = visit;
+    args.position = pos;
+    return args;
+}
