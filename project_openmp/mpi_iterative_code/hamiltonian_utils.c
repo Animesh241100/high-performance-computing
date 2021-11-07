@@ -17,17 +17,27 @@ void check_hamiltonian(struct Graph G) {
 int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P) {
     int num_cycles = 0;
     struct Stack_Args args_stack = init_args_stack();
+    struct Stack_Args temp_args_stack = init_args_stack();
     struct Args args = init_args(pos, vis, P);
     push_args(&args_stack, args);
     while(size_stack_args(&args_stack) > 0) {  // run the loop code stack.size times, these iterations don't have dependency
         struct Args args = top_args(&args_stack);
         pop_args(&args_stack);
-        num_cycles += iterate_over_args(&args_stack, args, G);
+        num_cycles += iterate_over_args(args, G, &temp_args_stack);
+        push_temp_args_to_main_stack(&temp_args_stack, &args_stack);
     }
     return num_cycles;
 }
 
-int iterate_over_args(struct Stack_Args * args_stack, struct Args args, struct Graph G) {
+void push_temp_args_to_main_stack(struct Stack_Args *temp_args_stack, struct Stack_Args *args_stack) {
+    while(size_stack_args(temp_args_stack) > 0) {
+        push_args(args_stack, top_args(temp_args_stack));
+        pop_args(temp_args_stack);
+    }
+}
+
+
+int iterate_over_args(struct Args args, struct Graph G, struct Stack_Args *temp_args_stack) {
     int num_cycles = 0;
     int position = args.position;
     int * visit = args.visit;
@@ -40,12 +50,12 @@ int iterate_over_args(struct Stack_Args * args_stack, struct Args args, struct G
             num_cycles++;
         }
     } else {
-        iterate_over_unvisited_adjacent(args, G, args_stack);
+        iterate_over_unvisited_adjacent(args, G, temp_args_stack);
     }
     return num_cycles;
 }
 
-void iterate_over_unvisited_adjacent(struct Args args, struct Graph G, struct Stack_Args *args_stack) {
+void iterate_over_unvisited_adjacent(struct Args args, struct Graph G, struct Stack_Args *temp_args_stack) {
     int position = args.position;
     int * visit = args.visit;
     struct Stack * Path = args.path;
@@ -58,7 +68,7 @@ void iterate_over_unvisited_adjacent(struct Args args, struct Graph G, struct St
             copy_visit(visit, visit_copy, G.V);
             copy_path(Path, Path_copy);
             args = init_args(position+1, visit_copy, Path_copy);
-            push_args(args_stack, args);
+            push_args(temp_args_stack, args);
             visit[i] = 0; // backtracking step
             pop(Path);
         }
