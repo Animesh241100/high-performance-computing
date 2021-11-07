@@ -75,6 +75,11 @@ void show_stack_args(struct Stack_Args *S, int V) {
     printf("\b<-----------------top args\n");
 }
 
+int size_stack_args(struct Stack_Args *S) {
+    return S->top + 1;
+}
+
+
 struct Stack_Args init_args_stack() {
     struct Stack_Args args_stack;
     args_stack.max_size = 100;

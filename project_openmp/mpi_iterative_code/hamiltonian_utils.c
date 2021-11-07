@@ -19,38 +19,52 @@ int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P) 
     struct Stack_Args args_stack = init_args_stack();
     struct Args args = init_args(pos, vis, P);
     push_args(&args_stack, args);
-    while(top_args(&args_stack).position != EMPTY) {  // run the loop code stack.size times, these iterations don't have dependency
-        args = top_args(&args_stack);
+    while(size_stack_args(&args_stack) > 0) {  // run the loop code stack.size times, these iterations don't have dependency
+        struct Args args = top_args(&args_stack);
         pop_args(&args_stack);
-        int position = args.position;
-        int * visit = args.visit;
-        struct Stack * Path = args.path;
-        if(position == G.V) { // the base case when we finally get to know whether we came to the end of a path
-            if(G.adj[top(Path)][0]) {
-                push(Path, 0);
-                show_stack(Path);
-                pop(Path);
-                num_cycles++;
-            }
-        } else {
-            for(int i = 0; i < G.V; i++) {
-                if((G.adj[top(Path)][i] && !visit[i])) { // for each of the unvisited adjacent vertex, of the vertex at the top of the stack 'Path'
-                    push(Path, i);
-                    visit[i] = 1;
-                    int* visit_copy = (int*)malloc(sizeof(int)*G.V);
-                    struct Stack* Path_copy = (struct Stack*)malloc(sizeof(struct Stack));
-                    copy_visit(visit, visit_copy, G.V);
-                    copy_path(Path, Path_copy);
-                    args = init_args(position+1, visit_copy, Path_copy);
-                    push_args(&args_stack, args);
-                    visit[i] = 0; // backtracking step
-                    pop(Path);
-                }
-            }
-        }
+        num_cycles += iterate_over_args(&args_stack, args, G);
     }
     return num_cycles;
 }
+
+int iterate_over_args(struct Stack_Args * args_stack, struct Args args, struct Graph G) {
+    int num_cycles = 0;
+    int position = args.position;
+    int * visit = args.visit;
+    struct Stack * Path = args.path;
+    if(position == G.V) { // the base case when we finally get to know whether we came to the end of a path
+        if(G.adj[top(Path)][0]) {
+            push(Path, 0);
+            show_stack(Path);
+            pop(Path);
+            num_cycles++;
+        }
+    } else {
+        iterate_over_unvisited_adjacent(args, G, args_stack);
+    }
+    return num_cycles;
+}
+
+void iterate_over_unvisited_adjacent(struct Args args, struct Graph G, struct Stack_Args *args_stack) {
+    int position = args.position;
+    int * visit = args.visit;
+    struct Stack * Path = args.path;
+    for(int i = 0; i < G.V; i++) {
+        if((G.adj[top(Path)][i] && !visit[i])) { // for each of the unvisited adjacent vertex, of the vertex at the top of the stack 'Path'
+            push(Path, i);
+            visit[i] = 1;
+            int* visit_copy = (int*)malloc(sizeof(int)*G.V);
+            struct Stack* Path_copy = (struct Stack*)malloc(sizeof(struct Stack));
+            copy_visit(visit, visit_copy, G.V);
+            copy_path(Path, Path_copy);
+            args = init_args(position+1, visit_copy, Path_copy);
+            push_args(args_stack, args);
+            visit[i] = 0; // backtracking step
+            pop(Path);
+        }
+    }
+}
+
 
 void print_args(struct Args args, int V) {
     printf("pos: %d\n", args.position);
