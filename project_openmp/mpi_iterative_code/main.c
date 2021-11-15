@@ -1,13 +1,25 @@
 #include "utils.h"
+// #include<stdio.h>
+// #include<mpi.h>
 
 int main() {
     struct Graph G;
+    double start, end;
+    MPI_Init(NULL, NULL);
     // init_graph_auto(&G, 100, 105);
-    init_graph(&G);
-    check_hamiltonian(G);
-    for (int i = 0; i < G.V; i++) 
-        free(G.adj[i]);
-    free(G.adj);
+    int my_rank = -1;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if(my_rank == 0) {
+        start = MPI_Wtime();
+        init_graph(&G);
+    }
+    check_hamiltonian(G, my_rank);
+    Free2DMemory(&G.adj);
+    if(my_rank == 0) {
+        end = MPI_Wtime();
+        printf("Time taken: %f\n", end-start);
+    }
+    // MPI_Finalize();
     return 0;
 }
 

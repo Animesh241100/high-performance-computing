@@ -5,11 +5,7 @@ void init_graph_auto(struct Graph *G, int V, int E) {
     G->V = V;
     G->E = E;
     srand(time(0));
-    G->adj = (int**)malloc(sizeof(int*)*G->V);
-    for(int i = 0; i < G->V; i++) {
-        G->adj[i] = (int *)malloc(sizeof(int)*G->V);
-        memset(G->adj[i], 0, sizeof(int)*G->V);
-    }
+    Allocate2DMemory(&G->adj, G->V, G->V);
     int u, v;
     for(int i = 0; i < G->E; i++) {
         u = rand() % G->V;
@@ -21,11 +17,7 @@ void init_graph_auto(struct Graph *G, int V, int E) {
 
 void init_graph(struct Graph *G) {
     scanf("%d %d", &G->V, &G->E);
-    G->adj = (int**)malloc(sizeof(int*)*G->V);
-    for(int i = 0; i < G->V; i++) {
-        G->adj[i] = (int *)malloc(sizeof(int)*G->V);
-        memset(G->adj[i], 0, sizeof(int)*G->V);
-    }
+    Allocate2DMemory(&G->adj, G->V, G->V);
     int u, v;
     for(int i = 0; i < G->E; i++) {
         scanf("%d %d", &u, &v);
@@ -43,3 +35,29 @@ void print_graph(struct Graph *G) {
         printf("\n");
     }   
 }
+
+
+// allocates the memory for the pseudo 2D array
+int Allocate2DMemory(int ***array, int n, int m) {
+    int *p = (int *)malloc(n*m*sizeof(int));
+    if (!p) return -1;
+
+    (*array) = (int **)malloc(n*sizeof(int*));
+    if (!(*array)) {
+       free(p);
+       return -1;
+    }
+
+    for (int i=0; i<n; i++) 
+       (*array)[i] = &(p[i*m]);
+
+    return 0;
+}
+
+// frees the memory of the pseudo 2D array
+int Free2DMemory(int ***array) {
+    free(&((*array)[0][0]));
+    free(*array);
+    return 0;
+}
+
