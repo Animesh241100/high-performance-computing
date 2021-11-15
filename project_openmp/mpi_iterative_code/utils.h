@@ -1,5 +1,8 @@
 #include "types_header.h"
 
+
+/***************************** For 'stacks.c'  ********************************/
+
 void push(struct Stack *S, int data);
 int top(struct Stack *S);
 int pop(struct Stack *S);
@@ -12,6 +15,8 @@ int size_stack_args(struct Stack_Args *S);
 struct Stack_Args init_args_stack();
 struct Args init_args(int pos, int * visit, struct Stack* p);
 
+
+/************************** For 'hamiltonian_utils.c' *************************/
 
 void check_hamiltonian(struct Graph G, int my_rank);
 int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P, int my_rank);
@@ -27,9 +32,11 @@ void RecvArgs(struct Args *args, int src, int V, int tag);
 void SendTempArgsStack(struct Stack_Args *temp_args_stack, int dest, int V);
 void RecvTempArgsStack(struct Stack_Args *temp_args_stack, int src, int V);
 
+/******************************* For 'graphs.c'  ******************************/
 
 void init_graph_auto(struct Graph *G, int V, int E);
 void init_graph(struct Graph *G);
 void print_graph(struct Graph *G);
 int Allocate2DMemory(int ***array, int n, int m);
 int Free2DMemory(int ***array);
+
