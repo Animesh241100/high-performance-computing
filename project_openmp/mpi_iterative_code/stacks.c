@@ -1,6 +1,6 @@
 #include "utils.h"
 
-
+// push 'data' into the stack 'S'
 void push(struct Stack *S, int data) {
     if(S->top > S->max_size - 1)
         printf("Stack overflow\n");
@@ -10,6 +10,7 @@ void push(struct Stack *S, int data) {
     }
 }
 
+// lookup the top of the stack 'S'
 int top(struct Stack *S) {
     if(S->top > -1) 
         return S->arr[S->top];
@@ -18,6 +19,7 @@ int top(struct Stack *S) {
 
 }
 
+// pop out of the stack 'S'
 int pop(struct Stack *S) {
     if(S->top > -1) {
         int val = S->arr[S->top];
@@ -28,6 +30,7 @@ int pop(struct Stack *S) {
     return EMPTY;
 }
 
+// print the stack 'S'
 void show_stack(struct Stack *S) {
     printf("[");
     for(int i = 0; i <= S->top; i++) {
@@ -38,7 +41,7 @@ void show_stack(struct Stack *S) {
 
 /*********************************************************************************/
 
-
+// push 'data' into the Stack_Args 'S'
 void push_args(struct Stack_Args *S, struct Args data) {
     if(S->top > S->max_size - 1)
         printf("Stack overflow\n");
@@ -48,6 +51,7 @@ void push_args(struct Stack_Args *S, struct Args data) {
     }
 }
 
+// lookup the top of the Stack_Args 'S'
 struct Args top_args(struct Stack_Args *S) {
     if(S->top > -1) 
         return S->arr[S->top];
@@ -57,6 +61,7 @@ struct Args top_args(struct Stack_Args *S) {
     return *args;
 }
 
+// pop out of the Stack_Args 'S'
 int pop_args(struct Stack_Args *S) {
     if(S->top > -1) {
         S->top--;
@@ -66,6 +71,7 @@ int pop_args(struct Stack_Args *S) {
     return EMPTY;
 }
 
+// print the contents of the Stack_Args S
 void show_stack_args(struct Stack_Args *S, int V) {
     printf("[");
     for(int i = 0; i <= S->top; i++) {
@@ -75,11 +81,12 @@ void show_stack_args(struct Stack_Args *S, int V) {
     printf("\b<-----------------top args\n");
 }
 
+// print the size of the Stack_Args S
 int size_stack_args(struct Stack_Args *S) {
     return S->top + 1;
 }
 
-
+// return an intialized Stack_Args object
 struct Stack_Args init_args_stack() {
     struct Stack_Args args_stack;
     args_stack.max_size = 100;
@@ -88,6 +95,7 @@ struct Stack_Args init_args_stack() {
     return args_stack;
 }
 
+// return an initialised Args object
 struct Args init_args(int pos, int * visit, struct Stack* p) {
     struct Args args;
     args.path = p;
