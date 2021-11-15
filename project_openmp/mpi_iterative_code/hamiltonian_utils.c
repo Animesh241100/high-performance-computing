@@ -1,5 +1,6 @@
 #include "utils.h"
 
+// subroutine to check if there are hamiltoinian cycles present in the graph 'G'
 void check_hamiltonian(struct Graph G, int my_rank) {
     int visit[G.V];
     for(int i = 0; i < G.V; i++)
@@ -16,6 +17,7 @@ void check_hamiltonian(struct Graph G, int my_rank) {
         printf("#Hamiltonian Cycles = %d\n", num_cycles); 
 }
 
+// returns the number of hamiltonian cycles present in the graph 'G'
 int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P, int my_rank) {
     int num_cycles = 0;
     int temp_num_cycles = 0;
@@ -60,7 +62,7 @@ int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P, 
                     num_cycles += iterate_over_args(args, G, &temp_args_stack);
                     i++;
                 }
-                return num_cycles;
+                // return num_cycles;
             }
             size = size_stack_args(&args_stack);
             while(size--)
@@ -72,6 +74,7 @@ int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P, 
     return num_cycles;
 }
 
+// subroutine to pop the content from 'temp_args_stack' and push them to 'args_stack'
 void push_temp_args_to_main_stack(struct Stack_Args *temp_args_stack, struct Stack_Args *args_stack) {
     while(size_stack_args(temp_args_stack) > 0) {
         push_args(args_stack, top_args(temp_args_stack));
@@ -79,7 +82,7 @@ void push_temp_args_to_main_stack(struct Stack_Args *temp_args_stack, struct Sta
     }
 }
 
-
+// suboroutine which returns the number of hamiltonian cycles w.r.t. the give 'args' object
 int iterate_over_args(struct Args args, struct Graph G, struct Stack_Args *temp_args_stack) {
     int num_cycles = 0;
     int position = args.position;
@@ -98,6 +101,7 @@ int iterate_over_args(struct Args args, struct Graph G, struct Stack_Args *temp_
     return num_cycles;
 }
 
+// literally iterates the backtracking algorithm over the adjacent nodes w.r.t. the lately added node in the path
 void iterate_over_unvisited_adjacent(struct Args args, struct Graph G, struct Stack_Args *temp_args_stack) {
     int position = args.position;
     int * visit = args.visit;
@@ -119,7 +123,7 @@ void iterate_over_unvisited_adjacent(struct Args args, struct Graph G, struct St
     }
 }
 
-
+// print the 'args' for debugging purposes
 void print_args(struct Args args, int V) {
     printf("pos: %d\n", args.position);
     show_stack(args.path);
@@ -128,6 +132,7 @@ void print_args(struct Args args, int V) {
     printf("\n");
 }
 
+// copy the path 'st' to 'copy_st'
 void copy_path(struct Stack * st, struct Stack * copy_st) {
     copy_st->max_size = st->max_size;
     copy_st->top = st->top;
@@ -136,12 +141,13 @@ void copy_path(struct Stack * st, struct Stack * copy_st) {
         copy_st->arr[i] = st->arr[i];
 }
 
-// copy array `visit` to `copy_visit`
+// copy the array `visit` to `copy_visit`
 void copy_visit(int * visit, int * copy_visit, int len) {
     for(int i = 0; i < len; i++)
         copy_visit[i] = visit[i];
 }
 
+// MPI_Bcast the graph G to all the processes present in the MPI_COMM_WORLD 
 void BroadCastGraph(struct Graph * G, int my_rank) {
     MPI_Bcast(&G->V, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&G->E, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -156,7 +162,7 @@ void BroadCastGraph(struct Graph * G, int my_rank) {
 
 }
 
-
+// MPI_Ssend(blocking send) the data 'args' to the 'dest' with tag 'tag' 
 void SendArgs(struct Args *args, int dest, int V, int tag) {
     MPI_Ssend(&args->position, 1, MPI_INT, dest, tag+1, MPI_COMM_WORLD);
     MPI_Ssend(args->visit, V, MPI_INT, dest, tag+2, MPI_COMM_WORLD);
@@ -165,7 +171,7 @@ void SendArgs(struct Args *args, int dest, int V, int tag) {
     MPI_Ssend(args->path->arr, args->path->max_size, MPI_INT, dest, tag+5, MPI_COMM_WORLD);
 }
 
-
+// MPI_Recv(blocking recv) the data 'args' from the 'src' with tag 'tag' 
 void RecvArgs(struct Args * args, int src, int V, int tag) {
     struct Stack* p = (struct Stack*)malloc(sizeof(struct Stack));
     args->path = p;
@@ -185,6 +191,7 @@ void RecvArgs(struct Args * args, int src, int V, int tag) {
     args->path->arr = arr;
 }
 
+// MPI_Ssend(blocking send) the data 'temp_args_stack' to the 'dest'  
 void SendTempArgsStack(struct Stack_Args *temp_args_stack, int dest, int V) {
     int size = temp_args_stack->top + 1;
     MPI_Ssend(&size, 1, MPI_INT, dest, 21, MPI_COMM_WORLD);
@@ -194,7 +201,7 @@ void SendTempArgsStack(struct Stack_Args *temp_args_stack, int dest, int V) {
         SendArgs(&args, dest, V, size);
     }
 }
-
+// MPI_Recv(blocking recv) the data 'temp_args_stack' from the 'src'  
 void RecvTempArgsStack(struct Stack_Args *temp_args_stack, int src, int V) {
     MPI_Status status;
     int size;
