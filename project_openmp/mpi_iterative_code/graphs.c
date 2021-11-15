@@ -1,6 +1,6 @@
 #include "utils.h"
 
-
+// auto intialises a graph 'G' with 'V' vertices and 'E' edges
 void init_graph_auto(struct Graph *G, int V, int E) {
     G->V = V;
     G->E = E;
@@ -15,6 +15,7 @@ void init_graph_auto(struct Graph *G, int V, int E) {
     }
 }
 
+// intialises a graph 'G' w.r.t. the input from STDIN
 void init_graph(struct Graph *G) {
     scanf("%d %d", &G->V, &G->E);
     Allocate2DMemory(&G->adj, G->V, G->V);
@@ -26,6 +27,7 @@ void init_graph(struct Graph *G) {
     }
 }
 
+// prints the graph 'G' on the STDOUT
 void print_graph(struct Graph *G) {
     for(int i = 0; i < G->V; i++) {
         printf("%d: ", i);
