@@ -1,13 +1,13 @@
-// #include<mpi.h>
+#include<mpi.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
 
 
+const int width = 512;
+const int height = 512;
 int *input_image;
 int *output_image;
-int width;
-int height;
 
 
 int get_average(int i, int j);
@@ -19,16 +19,40 @@ void write_output_image();
 
 
 int main(int argc, char** argv) {
-    read_input_image();
-    // print_input_image();
-    output_image = (int*)malloc(sizeof(int) * height * width);
-    
-    for(int i = 0; i < height; i++) {
-        for(int j = 0; j < width; j++) {
-            output_image[i*width + j] = get_average(i, j);
+    MPI_Init(NULL, NULL);
+    input_image = (int*)malloc(sizeof(int)*height*width);
+    output_image = (int*)malloc(sizeof(int)*height*width);
+    int world_size, my_rank;
+    double start, end;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Barrier(MPI_COMM_WORLD); /* IMPORTANT */
+    start = MPI_Wtime();
+    if(my_rank == 0) {    
+        read_input_image();
+        for(int i = 0; i < height%world_size; i++) {
+            for(int j = 0; j < height; j++) {
+                output_image[(height - 1 - i)*width + j] = get_average(height - 1 - i, j);
+            } 
         }
     }
-    write_output_image();
+    int len = height/world_size;
+    int * output_vec = (int*)malloc(sizeof(int)*len*width);
+    MPI_Bcast(input_image, width*height, MPI_INT, 0, MPI_COMM_WORLD);
+    for(int i = 0; i < len; i++) {
+        for(int j = 0; j < width; j++) {
+            output_vec[i*width + j] = get_average(my_rank*len+i, j);
+        }
+    }
+    MPI_Gather(output_vec, len*width, MPI_INT, output_image, len*width, MPI_INT, 0, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD); 
+    end = MPI_Wtime();
+    MPI_Finalize();
+    if(my_rank == 0) {
+        write_output_image();
+        printf("Time taken: %f\n", end-start);
+    }
     return 0;
 }
 
@@ -53,9 +77,6 @@ int get_average(int i, int j) {
 
 
 void read_input_image() {
-    width = 512;
-    height = 512;
-    input_image = (int*)malloc(sizeof(int)*height*width);
     FILE* fptr = fopen("lena.txt", "r");
     char* line = NULL;
     size_t len = 0;
@@ -105,7 +126,7 @@ void print_input_image() {
 }
 
 void write_output_image() {
-    FILE* fptr = fopen("lena_out.txt", "w");
+    FILE* fptr = fopen("lena_out_mpi.txt", "w");
     if (fptr == NULL) {
         printf("Error Opening File lena_out.txt\n");
         exit(EXIT_FAILURE);
