@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-
+// returns the average expected in the question
 int get_average(int i, int j) {
     int max_val = input_image[i*width + j];
     int min_val = (i == 0) || (j == 0) || (i == height-1) || (j == width-1) ? 0 : max_val;
@@ -51,7 +51,7 @@ int get_average(int i, int j) {
 }
 
 
-
+// read the input image present in the given file
 void read_input_image() {
     width = 512;
     height = 512;
@@ -74,6 +74,7 @@ void read_input_image() {
         free(line);
 }
 
+// return the value to put in the i'th row of the output_image
 void get_row(int i, char* line, size_t len) {
     int j = 0;
     int k = 0;
@@ -94,7 +95,7 @@ void get_row(int i, char* line, size_t len) {
     }
 }
 
-
+// print the pixel values of the input_image
 void print_input_image() {
     for(int i = 0; i < height; i++) {
         for(int j = 0; j < width; j++) {
@@ -104,6 +105,7 @@ void print_input_image() {
     }
 }
 
+// write the output image pixel intensity values to lena_out.txt file
 void write_output_image() {
     FILE* fptr = fopen("lena_out.txt", "w");
     if (fptr == NULL) {
@@ -121,7 +123,7 @@ void write_output_image() {
     }
 }
 
-
+// modify the string 'num' like a number
 void numfy(char * num) {
     if(num[1] == 'x') {
         num[1] = num[0];
