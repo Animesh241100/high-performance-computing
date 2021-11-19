@@ -20,7 +20,7 @@ __global__ void vector_add(double *a, double *b, double *sum, int *dev_block_siz
     int num_procs = (*dev_block_size)*(*dev_grid_size);
     int len = MAX_SIZE/num_procs;
     // printf("idx: %d, doing: %d to %d\n", idx, len*idx, len*idx+len-1);
-    if((long long)(len*idx + len - 1) < (long long)MAX_SIZE*MAX_SIZE) {
+    if((long long)(len*idx + len - 1) < (long long)MAX_SIZE) {
         for(long long i = 0; i < len; i++)
             sum[i + len*idx] = a[i + len*idx] + b[i + len*idx];
     }
