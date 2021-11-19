@@ -1,12 +1,14 @@
+// CUDA Program to add two matrices
+
 #include<stdio.h>
 #include<stdlib.h>
-#include<time.h>
+#include<chrono>
 
-#define MAX_SIZE 15
+#define MAX_SIZE 5000
 #define TRUE 1
 #define FALSE 0
-int GRID_SIZE = 10;        // Total Number of blocks
-int BLOCK_SIZE = 10;       // Total Number of threads in one block
+int GRID_SIZE;        // Total Number of blocks
+int BLOCK_SIZE;       // Total Number of threads in one block
 
 void InitMatrix(double *array, int is_empty);
 int Allocate2DMemory(double ***array, int n, int m);
@@ -18,10 +20,21 @@ void TestSum(double *A, double *B, int len);
 
 
 
-__global__ void matrix_add(double *a, double *b, double *sum, int *dev_block_size) {
+__global__ void matrix_add(double *a, double *b, double *sum, int *dev_block_size, int *dev_grid_size) {
     long long idx = (blockIdx.x)*(*dev_block_size) + threadIdx.x;
-    if(idx < MAX_SIZE*MAX_SIZE);
-        sum[idx] = a[idx] + b[idx];
+    int num_procs = (*dev_block_size)*(*dev_grid_size);
+    int len = MAX_SIZE/num_procs;
+    if((long long)(len*idx + len - 1) < (long long)MAX_SIZE) {
+        for(long long i = 0; i < len; i++)
+            for(long long j = 0; j < MAX_SIZE; j++)
+                sum[(i + len*idx)*MAX_SIZE + j] = a[(i + len*idx)*MAX_SIZE + j] + b[(i + len*idx)*MAX_SIZE + j];
+    }
+    if(blockIdx.x * threadIdx.x == 0) {
+        for(long long i = 0; i < (MAX_SIZE%num_procs); i++) {
+            for(long long j = 0; j < MAX_SIZE; j++)
+                sum[(MAX_SIZE-1-i)*MAX_SIZE + j] = a[(MAX_SIZE-1-i)*MAX_SIZE + j] + b[(MAX_SIZE-1-i)*MAX_SIZE + j];
+        }
+    }
 }
 
 
@@ -30,36 +43,44 @@ int main(void) {
     printf("Enter the grid size and the block size respectively:\n");
     scanf("%d %d", &GRID_SIZE, &BLOCK_SIZE);
     int size = sizeof(double) * MAX_SIZE * MAX_SIZE;
+    
+    // Initialising the matrices
     double *matrix1 = (double *)malloc(size);
     double *matrix2 = (double *)malloc(size);
     double *final_sum_matrix = (double *)malloc(size);
     srand(time(0));
     InitMatrix(matrix1, FALSE);
     InitMatrix(matrix2, FALSE);
-
+    
+    auto start = std::chrono::high_resolution_clock::now();
+    // copying the data to the device
     double *dev_m1;
     double *dev_m2;
     double *dev_sum;
-    int *dev_block_size;
+    int *dev_block_size, *dev_grid_size;
     cudaMalloc((void **)&dev_m1, size);
     cudaMalloc((void **)&dev_m2, size);
     cudaMalloc((void **)&dev_block_size, sizeof(int));
+    cudaMalloc((void **)&dev_grid_size, sizeof(int));
     cudaMalloc((void **)&dev_sum, size);
     cudaMemcpy(dev_m1, matrix1, size, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_m2, matrix2, size, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_block_size, &BLOCK_SIZE, sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_grid_size, &GRID_SIZE, sizeof(int), cudaMemcpyHostToDevice);
 
-    matrix_add<<<GRID_SIZE,BLOCK_SIZE>>>(dev_m1, dev_m2, dev_sum, dev_block_size);
+    matrix_add<<<GRID_SIZE,BLOCK_SIZE>>>(dev_m1, dev_m2, dev_sum, dev_block_size, dev_grid_size);
     cudaError err = cudaMemcpy(final_sum_matrix, dev_sum, size, cudaMemcpyDeviceToHost);
 	if(err != cudaSuccess) {
 		printf("CUDA error copying to Host: %s\n", cudaGetErrorString(err));
 	}
 
-    PrintMatrix(matrix1, "A: ");
-    PrintMatrix(matrix2, "B: ");
-    PrintMatrix(final_sum_matrix, "Sum: ");
-
-    TestSum(matrix1, matrix2, MAX_SIZE); // uncomment to check the actual sum without using CUDA
+    // PrintMatrix(matrix1, "A: ");  // uncomment to display the A matrix
+    // PrintMatrix(matrix2, "B: ");  // uncomment to display the B matrix
+    // PrintMatrix(final_sum_matrix, "Sum: "); // uncomment to display the final sum matrix
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    printf("Time Taken: %ld\n", duration.count());
+    // TestSum(matrix1, matrix2, MAX_SIZE); // uncomment to check the actual sum without using CUDA
 
     // Cleanup
     free(matrix1);
