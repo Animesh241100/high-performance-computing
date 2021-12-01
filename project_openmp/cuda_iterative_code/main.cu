@@ -7,12 +7,12 @@ int main() {
     int GRID_SIZE, BLOCK_SIZE;
     printf("Enter the grid size and the block size respectively:\n");
     scanf("%d %d", &GRID_SIZE, &BLOCK_SIZE);
-    printf("nice\n");
+    auto start = std::chrono::high_resolution_clock::now();
     check_hamiltonian(G, GRID_SIZE, BLOCK_SIZE);
-    // for (int i = 0; i < G.V; i++) 
-    //     free(G.adj[i]);
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    printf("Time Taken: %ld\n", duration.count());
     Free2DMemory(&G.adj);
-    // free(G.adj);
     return 0;
 }
 

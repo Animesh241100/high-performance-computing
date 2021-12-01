@@ -2,47 +2,32 @@
 #include<string.h>
 #include<stdlib.h>
 #include<time.h>
+#include<chrono>
 
 #define EMPTY -20
 
-class Lock {
-  public:
-    int * mutex;
-    // __device__ Lock() {
-    //     mutex = (int*)malloc(sizeof(int));
-    //     *mutex = 0;
-    // }
-    __device__ void lock() {
-        while(atomicCAS(mutex, 0, 1) != 0);
-    }
-
-    __device__ void unlock() {
-        atomicExch(mutex, 0);
-    }
-
-    // __device__ ~Lock() {
-    //     free(mutex);
-    // }
-};
-
+// Represents a stack of integers(nodes)
 struct Stack {
     int * arr;
     int max_size;
     int top;
 };
 
+// Represents an undirected graph
 struct Graph {
     int E;
     int V;
     int ** adj; // adjacency matrix
 };
 
+// Represents an argument for the iterative backtracking algorithm
 struct Args {
     int position;
     int * visit;
     struct Stack *path;
 };
 
+// Represents a stack of a 'struct Args'
 struct Stack_Args {
     struct Args * arr;
     int max_size;

@@ -83,7 +83,7 @@ __host__ __device__ int size_stack_args(struct Stack_Args *S) {
 
 void init_args_stack(struct Stack_Args *S) {
     cudaMallocManaged((void**)S, sizeof(struct Stack_Args));
-    S->max_size = 1000;
+    S->max_size = 5000;
     S->top = -1;
     cudaMallocManaged((void**)S->arr, sizeof(struct Args)*(S->max_size));
 }
