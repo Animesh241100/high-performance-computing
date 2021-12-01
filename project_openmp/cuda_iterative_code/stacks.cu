@@ -29,7 +29,7 @@ __host__ __device__ int pop(struct Stack *S) {
 }
 
 __host__ __device__ void show_stack(struct Stack *S) {
-    printf("[");
+    printf("\n[");
     for(int i = 0; i <= S->top; i++) {
         printf("%d ", S->arr[i]);
     }

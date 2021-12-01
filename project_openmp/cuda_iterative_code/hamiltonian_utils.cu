@@ -5,7 +5,7 @@ __managed__ int is_locked = 0;
 __managed__ int var_my = 0;
 
 void check_hamiltonian(struct Graph G, int GRID_SIZE, int BLOCK_SIZE) {
-    int num_procs = GRID_SIZE * BLOCK_SIZE - 1;
+    int num_procs = GRID_SIZE * BLOCK_SIZE;
     int * visit;
     cudaMallocManaged((void**)&visit, sizeof(int) * G.V);
     for(int i = 0; i < G.V; i++)
@@ -24,7 +24,7 @@ void check_hamiltonian(struct Graph G, int GRID_SIZE, int BLOCK_SIZE) {
 
 // __global__ void gpu_iterations(struct Graph * G, struct Stack_Args * args_stack, int * num_cycles, struct Stack_Args * temp_args_stack) {
 // __global__ void gpu_iterations(struct Graph G, struct Stack_Args args_stack) {
-__global__ void gpu_iterations(struct Graph G, struct Stack_Args args_stack, int * d_num_cycles) {
+__global__ void gpu_iterations(struct Graph G, struct Stack_Args args_stack, int * d_num_cycles, int * size) {
     struct Args args = args_stack.arr[args_stack.top - threadIdx.x];
     printf("\n--------------------------------\n");
     for(int i = 0; i < blockDim.x; i++) {
@@ -39,16 +39,18 @@ __global__ void gpu_iterations(struct Graph G, struct Stack_Args args_stack, int
     }
     int val = iterate_over_args(args, G);
     atomicAdd(d_num_cycles, val);
-    // printf("--------val %d ------------------------\n", val);
+    // __syncthreads();
+    // if(threadIdx.x == 0) {
+    //     printf("num threads %d size %d\n", blockDim.x, size);
+    // }
+    printf("I %d have done sum %d\n", threadIdx.x, val);
 }
 
 void get_grid_dimensions(int size, int * num_procs, int * temp_grid_size, int * temp_block_size) {
-    *temp_grid_size = 0;
-
+    *temp_grid_size = 1;
     *temp_block_size = 0;
     if(*num_procs == 0)
         return;
-    *temp_grid_size = 1;
     if(*num_procs >= size) {
         *temp_block_size = size;
         *num_procs -= size;
@@ -60,8 +62,9 @@ void get_grid_dimensions(int size, int * num_procs, int * temp_grid_size, int * 
 
 int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P, int * num_procs) {
     int temp_grid_size, temp_block_size;
-    int * num_cycles;
+    int * num_cycles,  * size;
     cudaMallocManaged((void**)&num_cycles, sizeof(int));
+    cudaMallocManaged((void**)&size, sizeof(int));
     *num_cycles = 0;
     struct Stack_Args args_stack;
     init_args_stack(&args_stack);
@@ -71,31 +74,36 @@ int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P, 
     init_args(&args, pos, vis, P);
     push_args(&args_stack, args);
     while(size_stack_args(&args_stack) > 0) {  // run the loop code stack.size times, these iterations don't have dependency
-        int size = size_stack_args(&args_stack);
-        get_grid_dimensions(size, num_procs, &temp_grid_size, &temp_block_size);
+        *size = size_stack_args(&args_stack);
+        get_grid_dimensions(*size, num_procs, &temp_grid_size, &temp_block_size);
+        printf("Grid size: %d, block size: %d size: %d num_procs: %d\n", temp_grid_size, temp_block_size, *size, *num_procs);
         struct Graph d_G;
         struct Stack_Args d_args_stack;
         struct Stack_Args * d_temp_args_stack;
         copy_graph_to_device(&d_G, &G);
-        printf("Grid size: %d, block size: %d\n", temp_grid_size, temp_block_size);
         // var_my = 0;
-        gpu_iterations<<<temp_grid_size, temp_block_size>>>(d_G, args_stack, num_cycles);
+
+        gpu_iterations<<<temp_grid_size, temp_block_size>>>(d_G, args_stack, num_cycles, size);
         cudaError_t cudaerr = cudaDeviceSynchronize();
         if (cudaerr != cudaSuccess)
             printf("kernel launch failed with error \"%s\".\n", cudaGetErrorString(cudaerr));
 
-        size -= temp_grid_size * temp_block_size; 
-        if(size != 0) {
-            int i = temp_grid_size * temp_block_size;
-            while(size--){
-                struct Args args = args_stack.arr[args_stack.top - i];
-                *num_cycles += iterate_over_args(args, G);
-                i++;
-            }
-        }  
-        size = size_stack_args(&args_stack);
+        // size -= temp_grid_size * temp_block_size; 
+        // if(size != 0) {
+        //     int i = temp_grid_size * temp_block_size;
+        //     printf("size %d size real %d size real temp %d\n", size, size_stack_args(&args_stack), size_stack_args(&temp_args_stack));
+            // struct Args args = args_stack.arr[4];
+            // printf("well %d\n", args_stack.arr[0].path->max_size);
+            // while(size--){
+                // struct Args args = args_stack.arr[args_stack.top - i];
+            //     printf("hi size %d idx %d top%d\n", size, args_stack.top - i, 2);
+            //     *num_cycles += host_iterate_over_args(args, G);
+            //     i++;
+            // }
+        // }  
+        *size = size_stack_args(&args_stack);
         printf("BEF: args stack size %d - temp args stack size %d, num: %d \n", size_stack_args(&args_stack), size_stack_args(&temp_args_stack), *num_cycles);
-        while(size--)
+        while(*size--)
             pop_args(&args_stack);
         push_temp_args_to_main_stack(&temp_args_stack, &args_stack);
         printf("AFT: args stack size %d - temp args stack size %d\n", size_stack_args(&args_stack), size_stack_args(&temp_args_stack));
@@ -194,6 +202,9 @@ __host__ __device__ int iterate_over_args(struct Args args, struct Graph G) {
     } else {
         iterate_over_unvisited_adjacent(args, G);
     }
+    // #ifdef _CUDA_ARCH__
+    printf("done2 tid\n");
+    // #endif
     return num_cycles;
 }
 
@@ -239,9 +250,12 @@ __host__ __device__ void iterate_over_unvisited_adjacent(struct Args args, struc
         }
         __syncthreads();
     }
+    printf("done tid %d\n", threadIdx.x);
 
-    #endif
+    #else
     push_temp_args_to_main_stack(&temp_args_stack2, &temp_args_stack);
+    printf("hix\n");
+    #endif
 
 }
 
@@ -266,4 +280,52 @@ void copy_path(struct Stack * st, struct Stack * copy_st) {
 void copy_visit(int * visit, int * copy_visit, int len) {
     for(int i = 0; i < len; i++)
         copy_visit[i] = visit[i];
+}
+
+int host_iterate_over_args(struct Args args, struct Graph G) {
+    int num_cycles = 0;
+    int position = args.position;
+    int * visit = args.visit;
+    struct Stack * Path = args.path;
+    // printf("top %d\n", args.path->top);
+    if(position == G.V) { // the base case when we finally get to know whether we came to the end of a path
+        if(G.adj[top(Path)][0]) {
+            push(Path, 0);
+            show_stack(Path);
+            pop(Path);
+            num_cycles++;
+        }
+    } else {
+        host_iterate_over_unvisited_adjacent(args, G);
+    }
+    return num_cycles;
+}
+
+void host_iterate_over_unvisited_adjacent(struct Args args, struct Graph G) {
+    int position = args.position;
+    int * visit = args.visit;
+    struct Stack * Path = args.path;
+    // int top_val = top(args.path);
+    // struct Stack_Args temp_args_stack2;
+    // temp_args_stack2.max_size = 100;
+    // temp_args_stack2.top = -1;
+    // temp_args_stack2.arr = (struct Args*)malloc(sizeof(struct Args)*(100));
+    // for(int i = 0; i < G.V; i++) {
+    //     if((G.adj[top(Path)][i] && !visit[i])) { // for each of the unvisited adjacent vertex, of the vertex at the top of the stack 'Path'
+    //         push(Path, i);
+    //         visit[i] = 1;
+    //         int* visit_copy = (int*)malloc(sizeof(int)*G.V);
+    //         struct Stack* Path_copy = (struct Stack*)malloc(sizeof(struct Stack));
+    //         copy_visit(visit, visit_copy, G.V);
+    //         copy_path(Path, Path_copy);
+    //         // struct Args * args = (struct Args *)malloc(sizeof(struct Args));
+    //         init_args(&args, position+1, visit_copy, Path_copy);
+    //         printf("size: %d top: %d new_top: %d pos: %d\n", size_stack_args(&temp_args_stack), top_val, top(args.path), args.position);
+    //         push_args(&temp_args_stack2, args);
+    //         visit[i] = 0; // backtracking step
+    //         pop(Path);
+    //     }
+    // }
+    // push_temp_args_to_main_stack(&temp_args_stack2, &temp_args_stack);
+    printf("hix2\n");
 }
