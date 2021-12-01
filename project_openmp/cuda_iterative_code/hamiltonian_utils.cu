@@ -25,24 +25,21 @@ void check_hamiltonian(struct Graph G, int GRID_SIZE, int BLOCK_SIZE) {
 // __global__ void gpu_iterations(struct Graph * G, struct Stack_Args * args_stack, int * num_cycles, struct Stack_Args * temp_args_stack) {
 // __global__ void gpu_iterations(struct Graph G, struct Stack_Args args_stack) {
 __global__ void gpu_iterations(struct Graph G, struct Stack_Args args_stack, int * d_num_cycles) {
-    __shared__ Lock lock;
-    if(threadIdx.x == 0) {
-        int * mut = (int *)malloc(sizeof(int));
-        *mut = 0;
-        // printf("h2iccho %d\n", *lock.mutex);
-        lock.mutex = mut;
-    }
-    // __syncthreads();
-    // *(lock.mutex) = 0
-    // lock.mutex = 0;
     struct Args args = args_stack.arr[args_stack.top - threadIdx.x];
-    *d_num_cycles += iterate_over_args(args, G, lock);
-    printf("\n--------------------------------\ntid: %d, top: %d, dev_visit: ", threadIdx.x, top(args.path));
-    for(int i = 0;  i < G.V; i++)
-        printf("%d ", args_stack.arr[args_stack.top].visit[i]);
-    printf("\n");
-    show_stack(args_stack.arr[0].path);
-    printf("--------------------------------\n");
+    printf("\n--------------------------------\n");
+    for(int i = 0; i < blockDim.x; i++) {
+        if(threadIdx.x == i) {
+            printf("tid: %d, top: %d, dev_visit: ", threadIdx.x, top(args.path));
+            for(int i = 0;  i < G.V; i++)
+                printf("%d ", args_stack.arr[args_stack.top - threadIdx.x].visit[i]);
+            printf("\n");
+            show_stack(args_stack.arr[args_stack.top - threadIdx.x].path);
+        }
+        __syncthreads();
+    }
+    int val = iterate_over_args(args, G);
+    atomicAdd(d_num_cycles, val);
+    // printf("--------val %d ------------------------\n", val);
 }
 
 void get_grid_dimensions(int size, int * num_procs, int * temp_grid_size, int * temp_block_size) {
@@ -92,15 +89,16 @@ int num_hamiltonian_cycles(int pos, int * vis, struct Graph G, struct Stack *P, 
             int i = temp_grid_size * temp_block_size;
             while(size--){
                 struct Args args = args_stack.arr[args_stack.top - i];
-                // num_cycles += iterate_over_args(args, G, lock);
+                *num_cycles += iterate_over_args(args, G);
                 i++;
             }
         }  
         size = size_stack_args(&args_stack);
-        printf("args stack size %d - temp args stack size %d\n", size_stack_args(&args_stack), size_stack_args(&temp_args_stack));
+        printf("BEF: args stack size %d - temp args stack size %d, num: %d \n", size_stack_args(&args_stack), size_stack_args(&temp_args_stack), *num_cycles);
         while(size--)
             pop_args(&args_stack);
         push_temp_args_to_main_stack(&temp_args_stack, &args_stack);
+        printf("AFT: args stack size %d - temp args stack size %d\n", size_stack_args(&args_stack), size_stack_args(&temp_args_stack));
         cudaFree(d_G.adj);
         // execute_cuda_free(d_G, d_args_stack, d_temp_args_stack, d_num_cycles);
     }
@@ -165,7 +163,6 @@ void copy_stack_to_host(struct Stack_Args * args_stack, struct Stack_Args * d_ar
 
 // subroutine to pop the content from 'temp_args_stack' and push them to 'args_stack'
 __host__ __device__ void push_temp_args_to_main_stack(struct Stack_Args *temp_args_stack, struct Stack_Args *args_stack) {
-    printf("hoi\n");
     while(size_stack_args(temp_args_stack) > 0) {
         push_args(args_stack, top_args(temp_args_stack));
         pop_args(temp_args_stack);
@@ -173,8 +170,8 @@ __host__ __device__ void push_temp_args_to_main_stack(struct Stack_Args *temp_ar
 }
 
 // suboroutine which returns the number of hamiltonian cycles w.r.t. the give 'args' object
-__host__ __device__ int iterate_over_args(struct Args args, struct Graph G, Lock lock) {
-    printf("I called top %d, pretop %d, pos %d\n", top(args.path), args.path->arr[args.path->top - 1], args.position);
+__host__ __device__ int iterate_over_args(struct Args args, struct Graph G) {
+    printf("iterate over args top %d, pretop %d, pos %d\n", top(args.path), args.path->arr[args.path->top - 1], args.position);
     int num_cycles = 0;
     int position = args.position;
     int * visit = args.visit;
@@ -182,17 +179,25 @@ __host__ __device__ int iterate_over_args(struct Args args, struct Graph G, Lock
     if(position == G.V) { // the base case when we finally get to know whether we came to the end of a path
         if(G.adj[top(Path)][0]) {
             push(Path, 0);
+            #ifdef __CUDA_ARCH__
+            for(int i = 0; i < blockDim.x; i++) {
+                if(threadIdx.x == i)
+                    show_stack(Path);
+                __syncthreads();
+            }
+            #else
             show_stack(Path);
+            #endif
             pop(Path);
             num_cycles++;
         }
     } else {
-        iterate_over_unvisited_adjacent(args, G, lock);
+        iterate_over_unvisited_adjacent(args, G);
     }
     return num_cycles;
 }
 
-__host__ __device__ void iterate_over_unvisited_adjacent(struct Args args, struct Graph G, Lock lock) {
+__host__ __device__ void iterate_over_unvisited_adjacent(struct Args args, struct Graph G) {
     int position = args.position;
     int * visit = args.visit;
     struct Stack * Path = args.path;
@@ -217,36 +222,26 @@ __host__ __device__ void iterate_over_unvisited_adjacent(struct Args args, struc
             printf("size: %d top: %d new_top: %d pos: %d\n", size_stack_args(&temp_args_stack), top_val, top(args.path), args.position);
             #endif
             push_args(&temp_args_stack2, args);
-            printf("pushed\n");
             visit[i] = 0; // backtracking step
             pop(Path);
         }
     }
     #ifdef __CUDA_ARCH__
     __syncthreads();
-    lock.lock();
-    var_my += 1;
-    printf("thread %d did it to %d\n", threadIdx.x, var_my);
-    lock.unlock();
 
-    // bool leaveLoop = false;
+    for(int i = 0; i < blockDim.x; i++) {
+        if(threadIdx.x == i) {
+            // var_my += 1;
+            // printf("nahi ho gaya*************** temp2 %d temp %d var_my %d \n", size_stack_args(&temp_args_stack2), size_stack_args(&temp_args_stack), var_my);
+            push_temp_args_to_main_stack(&temp_args_stack2, &temp_args_stack);
+            // printf("ho gaya*************** temp2 %d temp %d  var_my %d \n", size_stack_args(&temp_args_stack2), size_stack_args(&temp_args_stack), var_my);
+            // printf("thread %d did it to %d\n", threadIdx.x, var_my);
+        }
+        __syncthreads();
+    }
 
-    // while (!leaveLoop) {
-    //     printf("hi %d var_my %d is_locked %d\n", threadIdx.x, var_my, is_locked);
-    //     if (atomicExch(&is_locked, 1) == 0) {
-    //         push_temp_args_to_main_stack(&temp_args_stack2, &temp_args_stack);
-    //         //critical section
-    //         var_my += 1;
-    //         printf("me %d did it to %d\n", threadIdx.x, var_my);
-    //         leaveLoop = true;
-    //         atomicExch(&is_locked,0);
-    //     }
-    // }
-    // #else
-    // printf("nahi ho gaya*************** temp2 %d temp %d var_my %d \n", size_stack_args(&temp_args_stack2), size_stack_args(&temp_args_stack), var_my);
     #endif
     push_temp_args_to_main_stack(&temp_args_stack2, &temp_args_stack);
-    // printf("ho gaya*************** temp2 %d temp %d  var_my %d \n", size_stack_args(&temp_args_stack2), size_stack_args(&temp_args_stack), var_my);
 
 }
 

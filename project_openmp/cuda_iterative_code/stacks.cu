@@ -3,7 +3,7 @@
 
 __host__ __device__ void push(struct Stack *S, int data) {
     if(S->top > S->max_size - 1)
-        printf("Stack overflow\n");
+        printf("Stack overflow push\n");
     else {
         S->top++;
         S->arr[S->top] = data;
@@ -41,7 +41,7 @@ __host__ __device__ void show_stack(struct Stack *S) {
 
 __host__ __device__ void push_args(struct Stack_Args *S, struct Args data) {
     if(S->top > S->max_size - 1)
-        printf("Stack overflow\n");
+        printf("Stack overflow push args\n");
     else {
         S->top++;
         S->arr[S->top] = data;
@@ -83,7 +83,7 @@ __host__ __device__ int size_stack_args(struct Stack_Args *S) {
 
 void init_args_stack(struct Stack_Args *S) {
     cudaMallocManaged((void**)S, sizeof(struct Stack_Args));
-    S->max_size = 100;
+    S->max_size = 1000;
     S->top = -1;
     cudaMallocManaged((void**)S->arr, sizeof(struct Args)*(S->max_size));
 }
